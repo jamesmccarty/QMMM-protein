@@ -1,0 +1,6 @@
+Minimization of system
+ &cntrl 
+   imin=1, 
+   maxcyc=4000,
+   ncyc=2000,
+ / 
