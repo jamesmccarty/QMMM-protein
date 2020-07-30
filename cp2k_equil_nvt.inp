@@ -1,0 +1,100 @@
+&GLOBAL
+  PROJECT NVT                    ! Name of the calculation
+  PRINT_LEVEL LOW                ! Verbosity of the output
+  RUN_TYPE MD                    ! Calculation type: MD
+&END GLOBAL
+
+&FORCE_EVAL                      ! parameters needed to calculate energy and forces
+  METHOD FIST                    ! classical MM in CP2K using the FIST algorithm
+  &MM                            ! Parameters to run a MM calculation
+    &FORCEFIELD                  ! Set up a force_field for the classical calculations
+      PARMTYPE AMBER             ! Kind of torsion potential
+      ! Filename that contains the parameters of the FF
+      PARM_FILE_NAME system.parm7
+      &SPLINE                    ! Parameters to set up the splines used in the nonboned interactions
+        EMAX_SPLINE 1.0E8        ! Maximum value of the potential up to which splines will be constructed
+        RCUT_NB [angstrom] 10    ! Cutoff radius for nonbonded interactions
+      &END SPLINE
+    &END FORCEFIELD
+    &POISSON
+      &EWALD
+      ! Ewald parameters controlling electrostatic
+        EWALD_TYPE SPME          ! Type of ewald
+        ALPHA .40                ! Alpha parameter associated with Ewald (EWALD|PME|SPME)
+        GMAX 80                  ! Number of grid points (SPME and EWALD)
+      &END EWALD
+    &END POISSON
+  &END MM
+
+  &SUBSYS                        ! a subsystem: coordinates, topology, molecules and cell
+    &CELL                        !Set box dimensions here
+      ABC [angstrom] 87.7209030  87.9216130  87.6723290
+      ALPHA_BETA_GAMMA 90.0 90.0 90.0
+    &END CELL
+    &TOPOLOGY                    ! Topology for classical runs
+      CONN_FILE_FORMAT AMBER
+      CONN_FILE_NAME system.parm7
+    &END TOPOLOGY
+    !NA+ is not recognized by CP2K, so it is necessary to define it here using KIND
+    &KIND NA+
+     ELEMENT Na
+    &END KIND
+    &KIND NS
+     ELEMENT N
+    &END KIND
+    &KIND NS3
+     ELEMENT N
+    &END KIND
+    &KIND NS4
+     ELEMENT N
+    &END KIND
+    &KIND NS1
+     ELEMENT N
+    &END KIND
+    &KIND NS2
+     ELEMENT N
+    &END KIND
+  &END SUBSYS
+&END FORCE_EVAL
+
+&MOTION                            ! Parameter for the motion of the nuclei
+  &MD                              ! set of parameters needed perform an MD run
+  ENSEMBLE NVT                     ! Ensemble/integrator that you want to use for MD
+  TIMESTEP [fs] 0.5                ! Time step
+  STEPS    10000                   ! Number of MD steps to perform
+  TEMPERATURE 298                  ! Temperature in K
+  &THERMOSTAT                      ! Parameters of Thermostat.
+    REGION GLOBAL                  ! region each thermostat is attached to.
+    TYPE CSVR                      ! canonical sampling through velocity rescaling
+    &CSVR
+      TIMECON [fs] 10.
+    &END CSVR
+  &END THERMOSTAT
+  COMVEL_TOL 1e-8                  ! Remove COM motion
+  &END MD
+
+  &PRINT                           ! Printing properties during an MD run
+    &RESTART                       ! Printing of restart files
+      &EACH                        ! A restart file will be printed every 5000 md steps
+        MD 5000
+      &END
+    &END
+    &TRAJECTORY                    ! Controls the output of the trajectory
+      FORMAT DCD                   ! Format of the output trajectory is DCD
+      &EACH                        ! New trajectory frame will be printed each 100 md steps
+        MD 100
+      &END
+    &END
+    &RESTART_HISTORY               ! Controls printing of unique restart files during the run keeping all of them.
+      &EACH                        ! A new restart file will be printed every 5000 md steps
+        MD 5000
+      &END
+    &END
+  &END PRINT
+&END MOTION
+
+&EXT_RESTART
+  RESTART_FILE_NAME EM-1.restart
+  RESTART_DEFAULT .FALSE.
+  RESTART_POS TRUE
+&END
